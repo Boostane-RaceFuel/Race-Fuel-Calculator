@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<!-- saved from url=(0070)file:///C:/Users/EricM/Downloads/race_fuel_blend_calculator%20(5).html -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Race Fuel Blend Calculator</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif; background: #0f172a; color: #e2e8f0; margin: 0; padding: 20px; }
+  .container { max-width: 1100px; margin: 0 auto; }
+  h1 { text-align: center; color: #fbbf24; margin-bottom: 8px; }
+  .subtitle { text-align: center; color: #94a3b8; margin-bottom: 24px; font-size: 0.95rem; }
+  .warning { background: #7f1d1d; border: 1px solid #ef4444; color: #fecaca; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; font-size: 0.9rem; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 800px) { .grid { grid-template-columns: 1fr; } }
+  .card { background: #1e293b; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.3); }
+  h2 { margin-top: 0; color: #f1f5f9; font-size: 1.25rem; border-bottom: 1px solid #334155; padding-bottom: 8px; }
+  .fuel-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .fuel-row label { flex: 1; font-size: 0.95rem; }
+  .fuel-row input[type="number"] { width: 80px; padding: 6px 8px; border-radius: 6px; border: 1px solid #475569; background: #0f172a; color: #e2e8f0; font-size: 1rem; text-align: right; }
+  .fuel-row input[type="number"]:focus { outline: none; border-color: #fbbf24; }
+  .total { margin-top: 12px; font-weight: 600; color: #fbbf24; }
+  .total.bad { color: #f87171; }
+  button { background: #f59e0b; color: #0f172a; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; margin-top: 12px; font-size: 1rem; }
+  button:hover { background: #fbbf24; }
+  button.secondary { background: #475569; color: #e2e8f0; }
+  button.secondary:hover { background: #64748b; }
+  .results { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+  .result-item { background: #0f172a; padding: 12px; border-radius: 8px; border-left: 4px solid #f59e0b; }
+  .result-item .label { font-size: 0.8rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
+  .result-item .value { font-size: 1.4rem; font-weight: 700; color: #fbbf24; margin-top: 4px; }
+  .result-item .unit { font-size: 0.85rem; color: #cbd5e1; font-weight: 400; }
+  .notes { margin-top: 16px; font-size: 0.85rem; color: #94a3b8; line-height: 1.4; }
+  .preset-btns { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+  .preset-btns button { margin-top: 0; padding: 6px 12px; font-size: 0.85rem; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 12px; }
+  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid #334155; }
+  th { color: #94a3b8; font-weight: 500; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Race Fuel Blend Calculator</h1>
+  <p class="subtitle">Interactive calculator for custom race fuel blends — AKI, energy, latent heat, RVP, stoichiometric AFR &amp; relative flow volume</p>
+
+  <div class="warning">
+    <strong>Important:</strong> These calculations use linear volume-weighted (or mass-weighted where appropriate) approximations based on typical literature values. Real-world octane blending is non-linear (especially with alcohols and leaded fuels). RVP of alcohol blends is highly non-ideal. Always validate critical blends on a dyno or with lab testing. Values are approximate and for planning/education only.
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h2>Fuel Percentages (by Volume)</h2>
+      <div class="preset-btns">
+        <button class="secondary" onclick="loadPreset('example')">Example: 70/20/10</button>
+        <button class="secondary" onclick="loadPreset('e85ish')">High Ethanol</button>
+        <button class="secondary" onclick="loadPreset('clear')">Clear All</button>
+      </div>
+      <div id="fuels"><div class="fuel-row">
+      <label for="ethanol">Ethanol (USP Grade)</label>
+      <input type="number" id="ethanol" min="0" max="100" step="0.1" value="0" oninput="updateTotal()">
+      <span>%</span>
+    </div><div class="fuel-row">
+      <label for="methanol">Methanol</label>
+      <input type="number" id="methanol" min="0" max="100" step="0.1" value="0" oninput="updateTotal()">
+      <span>%</span>
+    </div><div class="fuel-row">
+      <label for="oct93">93 Octane (Pump)</label>
+      <input type="number" id="oct93" min="0" max="100" step="0.1" value="0" oninput="updateTotal()">
+      <span>%</span>
+    </div><div class="fuel-row">
+      <label for="race100">100 Race Fuel</label>
+      <input type="number" id="race100" min="0" max="100" step="0.1" value="0" oninput="updateTotal()">
+      <span>%</span>
+    </div><div class="fuel-row">
+      <label for="race102">102 Race Fuel</label>
+      <input type="number" id="race102" min="0" max="100" step="0.1" value="0" oninput="updateTotal()">
+      <span>%</span>
+    </div><div class="fuel-row">
+      <label for="race109">109 Race Fuel</label>
+      <input type="number" id="race109" min="0" max="100" step="0.1" value="0" oninput="updateTotal()">
+      <span>%</span>
+    </div><div class="fuel-row">
+      <label for="lead110">110 Leaded Race</label>
+      <input type="number" id="lead110" min="0" max="100" step="0.1" value="0" oninput="updateTotal()">
+      <span>%</span>
+    </div><div class="fuel-row">
+      <label for="lead116">116 Leaded Race</label>
+      <input type="number" id="lead116" min="0" max="100" step="0.1" value="0" oninput="updateTotal()">
+      <span>%</span>
+    </div><div class="fuel-row">
+      <label for="xylene">Xylene</label>
+      <input type="number" id="xylene" min="0" max="100" step="0.1" value="0" oninput="updateTotal()">
+      <span>%</span>
+    </div><div class="fuel-row">
+      <label for="toluene">Toluene</label>
+      <input type="number" id="toluene" min="0" max="100" step="0.1" value="0" oninput="updateTotal()">
+      <span>%</span>
+    </div><div class="fuel-row">
+      <label for="nitro">Nitromethane</label>
+      <input type="number" id="nitro" min="0" max="100" step="0.1" value="0" oninput="updateTotal()">
+      <span>%</span>
+    </div></div>
+      <div class="total bad" id="totalDisplay">Total: 0.0%</div>
+      <div style="display: flex; gap: 10px; margin-top: 12px;">
+        <button onclick="calculate()">Calculate Blend</button>
+        <button class="secondary" onclick="resetAll()">Reset</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Blend Results</h2>
+      <div id="results">
+        <p style="color:#94a3b8;">Enter percentages and click Calculate.</p>
+      </div>
+      <div class="notes" id="notes"></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:20px;">
+    <h2>Fuel Properties Reference (Typical Values Used)</h2>
+    <div style="overflow-x:auto;">
+      <table id="refTable">
+        <thead>
+          <tr>
+            <th>Fuel</th>
+            <th>AKI</th>
+            <th>SG</th>
+            <th>BTU/lb</th>
+            <th>Latent (BTU/lb)</th>
+            <th>RVP (psi)</th>
+            <th>Stoich AFR</th>
+          </tr>
+        </thead>
+        <tbody><tr>
+      <td>Ethanol (USP Grade)</td>
+      <td>114</td>
+      <td>0.789</td>
+      <td>76,002</td>
+      <td>361</td>
+      <td>2.3</td>
+      <td>9</td>
+    </tr><tr>
+      <td>Methanol</td>
+      <td>120</td>
+      <td>0.792</td>
+      <td>58,985</td>
+      <td>474</td>
+      <td>4.6</td>
+      <td>6.45</td>
+    </tr><tr>
+      <td>93 Octane (Pump)</td>
+      <td>93</td>
+      <td>0.740</td>
+      <td>113,989</td>
+      <td>150</td>
+      <td>8</td>
+      <td>14.7</td>
+    </tr><tr>
+      <td>100 Race Fuel</td>
+      <td>100</td>
+      <td>0.730</td>
+      <td>110,014</td>
+      <td>160</td>
+      <td>5.5</td>
+      <td>14.8</td>
+    </tr><tr>
+      <td>102 Race Fuel</td>
+      <td>102</td>
+      <td>0.730</td>
+      <td>112,023</td>
+      <td>155</td>
+      <td>5.2</td>
+      <td>14.8</td>
+    </tr><tr>
+      <td>109 Race Fuel</td>
+      <td>109</td>
+      <td>0.725</td>
+      <td>113,977</td>
+      <td>150</td>
+      <td>5</td>
+      <td>14.9</td>
+    </tr><tr>
+      <td>110 Leaded Race</td>
+      <td>110</td>
+      <td>0.729</td>
+      <td>113,997</td>
+      <td>155</td>
+      <td>5.6</td>
+      <td>14.9</td>
+    </tr><tr>
+      <td>116 Leaded Race</td>
+      <td>116</td>
+      <td>0.720</td>
+      <td>114,001</td>
+      <td>150</td>
+      <td>5</td>
+      <td>14.9</td>
+    </tr><tr>
+      <td>Xylene</td>
+      <td>117</td>
+      <td>0.870</td>
+      <td>132,491</td>
+      <td>160</td>
+      <td>0.8</td>
+      <td>14</td>
+    </tr><tr>
+      <td>Toluene</td>
+      <td>121</td>
+      <td>0.867</td>
+      <td>127,985</td>
+      <td>170</td>
+      <td>0.6</td>
+      <td>13.5</td>
+    </tr><tr>
+      <td>Nitromethane</td>
+      <td>120</td>
+      <td>1.137</td>
+      <td>45,991</td>
+      <td>258</td>
+      <td>2.8</td>
+      <td>1.7</td>
+    </tr></tbody>
+      </table>
+    </div>
+    <p class="notes">Properties compiled from race fuel tech sheets (Sunoco, VP, etc.), engineering tables, and published literature. Specific products vary — treat as representative averages.</p>
+  </div>
+</div>
+
+<script>
+const fuels = [
+  { id: 'ethanol', name: 'Ethanol (USP Grade)', aki: 114, sg: 0.789, btu_lb: 11550, latent: 361, rvp: 2.3, stoich: 9.0 },
+  { id: 'methanol', name: 'Methanol', aki: 120, sg: 0.792, btu_lb: 8930, latent: 474, rvp: 4.6, stoich: 6.45 },
+  { id: 'oct93', name: '93 Octane (Pump)', aki: 93, sg: 0.740, btu_lb: 18470, latent: 150, rvp: 8.0, stoich: 14.7 },
+  { id: 'race100', name: '100 Race Fuel', aki: 100, sg: 0.730, btu_lb: 18070, latent: 160, rvp: 5.5, stoich: 14.8 },
+  { id: 'race102', name: '102 Race Fuel', aki: 102, sg: 0.730, btu_lb: 18400, latent: 155, rvp: 5.2, stoich: 14.8 },
+  { id: 'race109', name: '109 Race Fuel', aki: 109, sg: 0.725, btu_lb: 18850, latent: 150, rvp: 5.0, stoich: 14.9 },
+  { id: 'lead110', name: '110 Leaded Race', aki: 110, sg: 0.729, btu_lb: 18750, latent: 155, rvp: 5.6, stoich: 14.9 },
+  { id: 'lead116', name: '116 Leaded Race', aki: 116, sg: 0.720, btu_lb: 18985, latent: 150, rvp: 5.0, stoich: 14.9 },
+  { id: 'xylene', name: 'Xylene', aki: 117, sg: 0.870, btu_lb: 18260, latent: 160, rvp: 0.8, stoich: 14.0 },
+  { id: 'toluene', name: 'Toluene', aki: 121, sg: 0.867, btu_lb: 17700, latent: 170, rvp: 0.6, stoich: 13.5 },
+  { id: 'nitro', name: 'Nitromethane', aki: 120, sg: 1.137, btu_lb: 4850, latent: 258, rvp: 2.8, stoich: 1.7 }
+];
+
+const BASE_93 = fuels.find(f => f.id === 'oct93');
+
+function buildInputs() {
+  const container = document.getElementById('fuels');
+  container.innerHTML = '';
+  fuels.forEach(f => {
+    const row = document.createElement('div');
+    row.className = 'fuel-row';
+    row.innerHTML = `
+      <label for="${f.id}">${f.name}</label>
+      <input type="number" id="${f.id}" min="0" max="100" step="0.1" value="0" oninput="updateTotal()">
+      <span>%</span>
+    `;
+    container.appendChild(row);
+  });
+  buildRefTable();
+}
+
+function buildRefTable() {
+  const tbody = document.querySelector('#refTable tbody');
+  tbody.innerHTML = '';
+  fuels.forEach(f => {
+    const btuGal = Math.round(f.btu_lb * f.sg * 8.34);
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${f.name}</td>
+      <td>${f.aki}</td>
+      <td>${f.sg.toFixed(3)}</td>
+      <td>${btuGal.toLocaleString()}</td>
+      <td>${f.latent}</td>
+      <td>${f.rvp}</td>
+      <td>${f.stoich}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function updateTotal() {
+  let total = 0;
+  fuels.forEach(f => {
+    const v = parseFloat(document.getElementById(f.id).value) || 0;
+    total += v;
+  });
+  const el = document.getElementById('totalDisplay');
+  el.textContent = `Total: ${total.toFixed(1)}%`;
+  el.className = 'total' + (Math.abs(total - 100) > 0.5 ? ' bad' : '');
+}
+
+function resetAll() {
+  fuels.forEach(f => {
+    document.getElementById(f.id).value = 0;
+  });
+  updateTotal();
+  document.getElementById('results').innerHTML = '<p style="color:#94a3b8;">Enter percentages and click Calculate.</p>';
+  document.getElementById('notes').innerHTML = '';
+}
+
+function loadPreset(type) {
+  fuels.forEach(f => document.getElementById(f.id).value = 0);
+  if (type === 'example') {
+    document.getElementById('ethanol').value = 70;
+    document.getElementById('methanol').value = 20;
+    document.getElementById('lead116').value = 10;
+  } else if (type === 'e85ish') {
+    document.getElementById('ethanol').value = 85;
+    document.getElementById('oct93').value = 15;
+  }
+  updateTotal();
+  if (type !== 'clear') calculate();
+}
+
+function calculate() {
+  const percents = {};
+  let totalVol = 0;
+  fuels.forEach(f => {
+    percents[f.id] = parseFloat(document.getElementById(f.id).value) || 0;
+    totalVol += percents[f.id];
+  });
+
+  if (totalVol < 0.1) {
+    document.getElementById('results').innerHTML = '<p style="color:#f87171;">Please enter fuel percentages.</p>';
+    return;
+  }
+
+  // Normalize
+  const factor = 100 / totalVol;
+
+  let volAki = 0, volSg = 0, volLatent = 0, volRvp = 0;
+  let totalMass = 0;
+  const massParts = [];
+
+  fuels.forEach(f => {
+    const volPct = percents[f.id] * factor;
+    const volFrac = volPct / 100;
+    volAki += volFrac * f.aki;
+    volSg += volFrac * f.sg;
+    volLatent += volFrac * f.latent; // approx volume-weighted latent for simplicity; we'll also do mass
+    volRvp += volFrac * f.rvp;
+    const mass = volFrac * f.sg;
+    totalMass += mass;
+    massParts.push({ ...f, volFrac, mass });
+  });
+
+  // Mass-weighted properties
+  let massBtu = 0, massLatent = 0, massStoich = 0;
+  massParts.forEach(p => {
+    const mf = p.mass / totalMass;
+    massBtu += mf * p.btu_lb;
+    massLatent += mf * p.latent;
+    massStoich += mf * p.stoich;
+  });
+
+  const blendSg = volSg; // volume-weighted is correct for ideal volume mixing
+  const btuPerGal = massBtu * blendSg * 8.34; // approx (water = 8.34 lb/gal)
+
+  // Relative volume for stoichiometric (vs 93 octane)
+  // For same air mass, fuel mass needed is inversely proportional to stoich AFR
+  // relative mass = stoich_93 / stoich_blend
+  // relative volume = relative mass * (sg_93 / sg_blend)
+  const relVolStoich = (BASE_93.stoich / massStoich) * (BASE_93.sg / blendSg);
+
+  // Relative energy density (BTU/gal vs 93)
+  const baseBtuGal = BASE_93.btu_lb * BASE_93.sg * 8.34;
+  const relEnergy = btuPerGal / baseBtuGal;
+
+  const results = document.getElementById('results');
+  results.innerHTML = `
+    <div class="results">
+      <div class="result-item">
+        <div class="label">AKI / Octane</div>
+        <div class="value">${volAki.toFixed(1)}</div>
+      </div>
+      <div class="result-item">
+        <div class="label">Specific Gravity</div>
+        <div class="value">${blendSg.toFixed(3)}</div>
+      </div>
+      <div class="result-item">
+        <div class="label">BTU / lb</div>
+        <div class="value">${Math.round(massBtu).toLocaleString()}</div>
+      </div>
+      <div class="result-item">
+        <div class="label">BTU / gallon</div>
+        <div class="value">${Math.round(btuPerGal).toLocaleString()}</div>
+      </div>
+      <div class="result-item">
+        <div class="label">Latent Heat</div>
+        <div class="value">${Math.round(massLatent)} <span class="unit">BTU/lb</span></div>
+      </div>
+      <div class="result-item">
+        <div class="label">RVP (approx)</div>
+        <div class="value">${volRvp.toFixed(1)} <span class="unit">psi</span></div>
+      </div>
+      <div class="result-item">
+        <div class="label">Stoichiometric AFR</div>
+        <div class="value">${massStoich.toFixed(2)} : 1</div>
+      </div>
+      <div class="result-item">
+        <div class="label">Relative Flow Volume</div>
+        <div class="value">${relVolStoich.toFixed(2)}x <span class="unit">vs 93 octane (100% base)</span></div>
+      </div>
+      <div class="result-item">
+        <div class="label">Relative Energy Density</div>
+        <div class="value">${(relEnergy * 100).toFixed(0)}% <span class="unit">of 93 octane (BTU/gal)</span></div>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('notes').innerHTML = `
+    <strong>Notes:</strong><br>
+    • Relative Flow Volume is the volume multiplier needed vs 93 octane pump gas for stoichiometric operation (1.0x = same volume as 93; 1.5x = 50% more fuel volume required). Accounts for both the lower stoich AFR and density difference. Injector sizing / fuel system flow must account for this.<br>
+    • Octane is volume-weighted average (common approximation). Alcohols and leaded fuels can blend non-linearly.<br>
+    • RVP is volume-weighted and highly approximate — alcohol blends often show elevated RVP due to non-ideal behavior.<br>
+    • Latent heat is mass-weighted. High latent heat fuels (methanol, ethanol, nitro) provide significant charge cooling.
+  `;
+}
+
+buildInputs();
+updateTotal();
+</script>
+
+
+</body></html>
